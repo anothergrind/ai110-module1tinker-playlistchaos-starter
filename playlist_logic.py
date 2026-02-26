@@ -73,7 +73,7 @@ def classify_song(song: Song, profile: Dict[str, object]) -> str:
     is_hype_keyword = any(k in genre for k in hype_keywords)
     is_chill_keyword = any(k in title for k in chill_keywords)
 
-    if genre == favorite_genre or energy >= hype_min_energy or is_hype_keyword:
+    if energy >= hype_min_energy:
         return "Hype"
     if energy <= chill_max_energy or is_chill_keyword:
         return "Chill"
@@ -153,6 +153,7 @@ def most_common_artist(songs: List[Song]) -> Tuple[str, int]:
     items = sorted(counts.items(), key=lambda item: item[1], reverse=True)
     return items[0]
 
+#search bug here
 
 def search_songs(
     songs: List[Song],
@@ -160,15 +161,21 @@ def search_songs(
     field: str = "artist",
 ) -> List[Song]:
     """Return songs matching the query on a given field."""
-    if not query:
+    q = (query or "").strip().lower()
+
+    # If no query, return all songs
+    if not q:
         return songs
 
-    q = query.lower().strip()
-    filtered: List[Song] = []
+    # Handle a genre dropdown option like "others"
+    if field == "genre" and q in {"other", "others"}:
+        known = {"rock", "pop", "hip hop", "hip-hop", "rap", "country", "edm"}
+        return [s for s in songs if str(s.get("genre", "")).strip().lower() not in known]
 
+    filtered: List[Song] = []
     for song in songs:
-        value = str(song.get(field, "")).lower()
-        if value and value in q:
+        value = str(song.get(field, "")).strip().lower()
+        if value and q in value:  # fixed direction
             filtered.append(song)
 
     return filtered
